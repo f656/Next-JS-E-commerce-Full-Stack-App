@@ -1,0 +1,46 @@
+import { otpEmail } from "@/email/otpEmail";
+import { connectDb } from "@/lib/databaseConnection";
+import { generateOTP, response } from "@/lib/helperFunction";
+import { sendMail } from "@/lib/sendMail";
+import { zSchema } from "@/lib/zodSchema";
+import OTPModel from "@/models/Otp.model";
+import UserModel from "@/models/User.model";
+
+export async function POST(request) {
+  try {
+    await connectDb();
+    const payload = await request.json();
+    const validationSchema = zSchema.pick({ email: true });
+
+    const validatedData = validationSchema.safeParse(payload);
+    if (!validatedData.success) {
+      return response(false, 401, "Missing input field", validatedData.error);
+    }
+    const { email } = validatedData.data;
+
+    const getUser = await UserModel.findOne({ deletedAt: null, email }).lean();
+    if (!getUser) {
+      return response(false, 404, "User not found");
+    }
+
+    //remove old otp..
+    await OTPModel.deleteMany({ email });
+    const otp = generateOTP();
+    const newOtpData = new OTPModel({
+      email,
+      otp,
+    });
+    await newOtpData.save();
+
+    const otpSendStatus = await sendMail(
+      "Your login Verification code.",
+      email,
+      otpEmail(otp),
+    );
+    if (!otpSendStatus.success) {
+      return response(false, 400, "Failed to resend otp.");
+    }
+
+    return response(true, 200, "OTP sent successfully.");
+  } catch (error) {}
+}
