@@ -14,13 +14,18 @@ import RecyclingIcon from "@mui/icons-material/Recycling";
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import useDeleteMutation from "@/hooks/useDeleteMutation";
+import ButtonLoading from "../ButtonLoading";
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import { download, generateCsv, mkConfig } from "export-to-csv";
+
 const DatatableWrapper = ({
   queryKey,
   fetchUrl,
   columnConfig,
   initialPageSize = 10,
   exportEndPoint,
-  deleteEndPoint,
+  deleteEndpoint,
   deleteType,
   trashView,
   createAction,
@@ -37,17 +42,58 @@ const DatatableWrapper = ({
   // Row selection state
   const [rowSelection, setRowSelection] = useState();
 
+  // Export laoding state 
+  const [exportLoading, setExportLoading] = useState(false)
+
   //handle delete Method 
+  const deleteMutation = useDeleteMutation(queryKey,deleteEndpoint)
  const handleDelete = (ids, deleteType) => {
     let c = true;
     if (deleteType === "PD") {
       c = confirm("Are you sure you want to delete the Data Permanently?");
+    } else {
+       c = confirm("Are you sure you want to move data into trash?")
     }
     if (c) {
       deleteMutation.mutate({ ids, deleteType });
+      setRowSelection({});
     }
     
   };
+
+  //export method..
+  const handleExport = async (selectedRows) => {
+    setExportLoading(true);
+    try {
+       const csvConfig = mkConfig({
+        fieldSeparator: ',',
+        decimalSeparator:'.',
+        useKeysAsHeaders:true,
+        filename:'csv-data'
+       })
+
+       let csv
+       if(object.keys(rowSelection).length > 0){
+        // export only selected rows
+        const rowData = selectedRows.map((row) => row.original)
+        csv = generateCsv(csvConfig)(rowData)
+       } else {
+         // export all data
+         const { data:response} = await axios.get(exportEndPoint)
+         if(!response.success){
+          throw new Error(response.message)
+         }
+         const rowData = response.data
+         csv = generateCsv(csvConfig)(rowData)
+       }
+
+       download(csvConfig)(csv)
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setExportLoading(false);
+    }
+  }
 
 
   // Data fetching logic
@@ -135,7 +181,7 @@ const DatatableWrapper = ({
         {deleteType === "SD" && (
           <Tooltip title="Delete All">
               <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete()}>
+              onClick={() => handleDelete(Object.keys(rowSelection),deleteType)}>
                 <DeleteIcon />
               </IconButton>
           </Tooltip>
@@ -145,13 +191,13 @@ const DatatableWrapper = ({
             <>
           <Tooltip title="Restore Data">
               <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete()}>
+              onClick={() => handleDelete(Object.keys(rowSelection),'RSD')}>
                 <RestoreFromTrashIcon />
               </IconButton>
           </Tooltip>
           <Tooltip title="Permanently Delete Data">
               <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete()}>
+              onClick={() => handleDelete(Object.keys(rowSelection),deleteType)}>
                 <DeleteForeverIcon />
               </IconButton>
           </Tooltip>
@@ -159,6 +205,21 @@ const DatatableWrapper = ({
         )}
       </>
     ),
+
+    enableRowActions:true,
+    positionActionsColumn:'last',
+     renderRowActionMenuItems: ({ row }) => createAction(row,deleteType,handleDelete),
+     renderTopToolbarCustomActions:({ table }) => (
+      <Tooltip>
+        <ButtonLoading 
+        type="button"
+        text={<><SaveAltIcon/>Export</>}
+        loading={exportLoading}
+        onClick= {() => handleExport(table.getSelectedRowModel().rows) }
+        />
+          
+      </Tooltip>
+     )
   });
   return <div>DatatableWrapper</div>;
 };
