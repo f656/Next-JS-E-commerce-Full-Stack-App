@@ -1,227 +1,46 @@
-import { IconButton, Tooltip } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import {
-  MRT_ShowHideColumnsButton,
-  MRT_ToggleDensePaddingButton,
-  MRT_ToggleFullScreenButton,
-  MRT_ToggleGlobalFilterButton,
-  useMaterialReactTable,
-} from "material-react-table";
-import Link from "next/link";
-import React, { useState } from "react";
-import RecyclingIcon from "@mui/icons-material/Recycling";
-import DeleteIcon from '@mui/icons-material/Delete';
-import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import useDeleteMutation from "@/hooks/useDeleteMutation";
-import ButtonLoading from "../ButtonLoading";
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import { download, generateCsv, mkConfig } from "export-to-csv";
+/* eslint-disable react-hooks/set-state-in-effect */
+"use client";
+import { ThemeProvider } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import Datatable from "./Datatable";
+import { useTheme } from "next-themes";
+import { darkTheme, lightTheme } from "@/lib/materialTheme";
 
 const DatatableWrapper = ({
   queryKey,
   fetchUrl,
   columnConfig,
   initialPageSize = 10,
-  exportEndPoint,
+  exportEndpoint,
   deleteEndpoint,
   deleteType,
   trashView,
   createAction,
 }) => {
-  //filter,sorting and Pagination states
-  const [columnFilters, setColumnFilters] = useState([]);
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [sorting, setSorting] = useState([]);
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: initialPageSize,
-  });
 
-  // Row selection state
-  const [rowSelection, setRowSelection] = useState();
+  const { resolvedTheme} = useTheme();
+  const [mounted,setMounted] = useState(false);
 
-  // Export laoding state 
-  const [exportLoading, setExportLoading] = useState(false)
+  useEffect(() => {
+     setMounted(true);
+  },[])
 
-  //handle delete Method 
-  const deleteMutation = useDeleteMutation(queryKey,deleteEndpoint)
- const handleDelete = (ids, deleteType) => {
-    let c = true;
-    if (deleteType === "PD") {
-      c = confirm("Are you sure you want to delete the Data Permanently?");
-    } else {
-       c = confirm("Are you sure you want to move data into trash?")
-    }
-    if (c) {
-      deleteMutation.mutate({ ids, deleteType });
-      setRowSelection({});
-    }
-    
-  };
-
-  //export method..
-  const handleExport = async (selectedRows) => {
-    setExportLoading(true);
-    try {
-       const csvConfig = mkConfig({
-        fieldSeparator: ',',
-        decimalSeparator:'.',
-        useKeysAsHeaders:true,
-        filename:'csv-data'
-       })
-
-       let csv
-       if(object.keys(rowSelection).length > 0){
-        // export only selected rows
-        const rowData = selectedRows.map((row) => row.original)
-        csv = generateCsv(csvConfig)(rowData)
-       } else {
-         // export all data
-         const { data:response} = await axios.get(exportEndPoint)
-         if(!response.success){
-          throw new Error(response.message)
-         }
-         const rowData = response.data
-         csv = generateCsv(csvConfig)(rowData)
-       }
-
-       download(csvConfig)(csv)
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setExportLoading(false);
-    }
-  }
-
-
-  // Data fetching logic
-  const {
-    data: { data = [], meta } = {},
-    isError,
-    isRefetching,
-    isLoading,
-  } = useQuery({
-    queryKey: [queryKey, { columnFilters, globalFilter, sorting, pagination }],
-    queryFn: async () => {
-      const url = new URL(fetchUrl, process.env.NEXT_PUBLIC_BASE_URL);
-      url.searchParams.set(
-        "start",
-        `${pagination.pageIndex * pagination.pageSize}`,
-      );
-      url.searchParams.set("size", `${pagination.pageSize}`);
-      url.searchParams.set("filters", JSON.stringify(columnFilters ?? []));
-      url.searchParams.set("globalFilter", globalFilter ?? "");
-      url.searchParams.set("sorting", JSON.stringify(sorting ?? []));
-
-      const { data: response } = await axios.get(url.href);
-      return response;
-    },
-    placeholderData: keepPreviousData,
-  });
-
-  //init table
-
-  const table = useMaterialReactTable({
-    columns: columnConfig,
-    data,
-    enableRowSelection: true,
-    columnFilterDisplayMode: "popover",
-    paginationDisplayMode: "pages",
-    enableColumnOrdering: true,
-    enableStickyHeader: true,
-    enableStickyFooter: true,
-    initialState: { showColumnFilters: true },
-    manualFiltering: true,
-    manualPagination: true,
-    manualSorting: true,
-    muiToolbarAlertBannerProps: isError
-      ? {
-          color: "error",
-          children: "Error loading data",
-        }
-      : undefined,
-
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    rowCount: data?.meta?.totalRowCount ?? 0,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      columnFilters,
-      globalFilter,
-      isLoading,
-      pagination,
-      showAlertBanner: isError,
-      showProgressBars: isRefetching,
-      sorting,
-      rowSelection,
-    },
-    getRowId: (originalRow) => originalRow._id,
-    renderToolbarInternalActions: ({ table }) => (
-      <>
-        {/* built in button  */}
-        <MRT_ToggleGlobalFilterButton table={table} />
-        <MRT_ShowHideColumnsButton table={table} />
-        <MRT_ToggleFullScreenButton table={table} />
-        <MRT_ToggleDensePaddingButton table={table} />
-
-        {deleteType !== "PD" && (
-          <Tooltip title="Recycle Bin">
-            <Link href={trashView}>
-              <IconButton>
-                <RecyclingIcon />
-              </IconButton>
-            </Link>
-          </Tooltip>
-        )}
-
-        {deleteType === "SD" && (
-          <Tooltip title="Delete All">
-              <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete(Object.keys(rowSelection),deleteType)}>
-                <DeleteIcon />
-              </IconButton>
-          </Tooltip>
-        )}
-
-         {deleteType === "PD" && (
-            <>
-          <Tooltip title="Restore Data">
-              <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete(Object.keys(rowSelection),'RSD')}>
-                <RestoreFromTrashIcon />
-              </IconButton>
-          </Tooltip>
-          <Tooltip title="Permanently Delete Data">
-              <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete(Object.keys(rowSelection),deleteType)}>
-                <DeleteForeverIcon />
-              </IconButton>
-          </Tooltip>
-            </>
-        )}
-      </>
-    ),
-
-    enableRowActions:true,
-    positionActionsColumn:'last',
-     renderRowActionMenuItems: ({ row }) => createAction(row,deleteType,handleDelete),
-     renderTopToolbarCustomActions:({ table }) => (
-      <Tooltip>
-        <ButtonLoading 
-        type="button"
-        text={<><SaveAltIcon/>Export</>}
-        loading={exportLoading}
-        onClick= {() => handleExport(table.getSelectedRowModel().rows) }
-        />
-          
-      </Tooltip>
-     )
-  });
-  return <div>DatatableWrapper</div>;
+  if(!mounted) return null;
+  return (
+    <ThemeProvider theme={resolvedTheme === 'dark' ? darkTheme : lightTheme}>
+      <Datatable
+        queryKey={queryKey}
+        fetchUrl={fetchUrl}
+        columnConfig={columnConfig}
+        initialPageSize={initialPageSize}
+        exportEndpoint={exportEndpoint}
+        deleteEndpoint={deleteEndpoint}
+        deleteType={deleteType}
+        trashView={trashView}
+        createAction={createAction}
+      />
+    </ThemeProvider>
+  );
 };
 
 export default DatatableWrapper;
