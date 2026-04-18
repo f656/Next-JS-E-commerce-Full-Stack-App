@@ -1,5 +1,5 @@
 import { IconButton, Tooltip } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
   MaterialReactTable,
@@ -12,12 +12,12 @@ import {
 import Link from "next/link";
 import React, { useState } from "react";
 import RecyclingIcon from "@mui/icons-material/Recycling";
-import DeleteIcon from '@mui/icons-material/Delete';
-import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import DeleteIcon from "@mui/icons-material/Delete";
+import RestoreFromTrashIcon from "@mui/icons-material/RestoreFromTrash";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import useDeleteMutation from "@/hooks/useDeleteMutation";
 import ButtonLoading from "../ButtonLoading";
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import { download, generateCsv, mkConfig } from "export-to-csv";
 
 const Datatable = ({
@@ -41,65 +41,63 @@ const Datatable = ({
   });
 
   // Row selection state
-  const [rowSelection, setRowSelection] = useState();
+  const [rowSelection, setRowSelection] = useState({});
 
-  // Export laoding state 
-  const [exportLoading, setExportLoading] = useState(false)
+  // Export laoding state
+  const [exportLoading, setExportLoading] = useState(false);
 
-  //handle delete Method 
-  const deleteMutation = useDeleteMutation(queryKey,deleteEndpoint)
- const handleDelete = (ids, deleteType) => {
+  //handle delete Method
+  const deleteMutation = useDeleteMutation(queryKey, deleteEndpoint);
+  const handleDelete = (ids, deleteType) => {
     let c = true;
     if (deleteType === "PD") {
       c = confirm("Are you sure you want to delete the Data Permanently?");
     } else {
-       c = confirm("Are you sure you want to move data into trash?")
+      c = confirm("Are you sure you want to move data into trash?");
     }
     if (c) {
       deleteMutation.mutate({ ids, deleteType });
       setRowSelection({});
     }
-    
   };
 
   //export method..
   const handleExport = async (selectedRows) => {
     setExportLoading(true);
     try {
-       const csvConfig = mkConfig({
-        fieldSeparator: ',',
-        decimalSeparator:'.',
-        useKeysAsHeaders:true,
-        filename:'csv-data'
-       })
+      const csvConfig = mkConfig({
+        fieldSeparator: ",",
+        decimalSeparator: ".",
+        useKeysAsHeaders: true,
+        filename: "csv-data",
+      });
 
-       let csv
-       if(object.keys(rowSelection).length > 0){
+      let csv;
+      if (Object.keys(rowSelection || {}).length > 0) {
         // export only selected rows
-        const rowData = selectedRows.map((row) => row.original)
-        csv = generateCsv(csvConfig)(rowData)
-       } else {
-         // export all data
-         const { data:response} = await axios.get(exportEndpoint)
-         if(!response.success){
-          throw new Error(response.message)
-         }
-         const rowData = response.data
-         csv = generateCsv(csvConfig)(rowData)
-       }
+        const rowData = selectedRows.map((row) => row.original);
+        csv = generateCsv(csvConfig)(rowData);
+      } else {
+        // export all data
+        const { data: response } = await axios.get(exportEndpoint);
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+        const rowData = response.data;
+        csv = generateCsv(csvConfig)(rowData);
+      }
 
-       download(csvConfig)(csv)
+      download(csvConfig)(csv);
     } catch (error) {
       console.log(error);
     } finally {
       setExportLoading(false);
     }
-  }
-
+  };
 
   // Data fetching logic
   const {
-    data: { data = [], meta } = {},
+    data: response,
     isError,
     isRefetching,
     isLoading,
@@ -115,12 +113,18 @@ const Datatable = ({
       url.searchParams.set("filters", JSON.stringify(columnFilters ?? []));
       url.searchParams.set("globalFilter", globalFilter ?? "");
       url.searchParams.set("sorting", JSON.stringify(sorting ?? []));
+      url.searchParams.set("deleteType", deleteType);
 
       const { data: response } = await axios.get(url.href);
+
       return response;
     },
     placeholderData: keepPreviousData,
   });
+
+  // ✅ SAFE DATA
+  const data = response?.data || [];
+  const meta = response?.meta;
 
   //init table
 
@@ -148,7 +152,7 @@ const Datatable = ({
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
     onSortingChange: setSorting,
-    rowCount: data?.meta?.totalRowCount ?? 0,
+    rowCount: meta?.totalRowCount ?? 0,
     onRowSelectionChange: setRowSelection,
     state: {
       columnFilters,
@@ -181,50 +185,72 @@ const Datatable = ({
 
         {deleteType === "SD" && (
           <Tooltip title="Delete All">
-              <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete(Object.keys(rowSelection),deleteType)}>
-                <DeleteIcon />
-              </IconButton>
+            <IconButton
+              disabled={
+                !table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
+              }
+              onClick={() =>
+                handleDelete(Object.keys(rowSelection), deleteType)
+              }
+            >
+              <DeleteIcon />
+            </IconButton>
           </Tooltip>
         )}
 
-         {deleteType === "PD" && (
-            <>
-          <Tooltip title="Restore Data">
-              <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete(Object.keys(rowSelection),'RSD')}>
+        {deleteType === "PD" && (
+          <>
+            <Tooltip title="Restore Data">
+              <IconButton
+                disabled={
+                  !table.getIsSomeRowsSelected() &&
+                  !table.getIsAllRowsSelected()
+                }
+                onClick={() => handleDelete(Object.keys(rowSelection), "RSD")}
+              >
                 <RestoreFromTrashIcon />
               </IconButton>
-          </Tooltip>
-          <Tooltip title="Permanently Delete Data">
-              <IconButton disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
-              onClick={() => handleDelete(Object.keys(rowSelection),deleteType)}>
+            </Tooltip>
+            <Tooltip title="Permanently Delete Data">
+              <IconButton
+                disabled={
+                  !table.getIsSomeRowsSelected() &&
+                  !table.getIsAllRowsSelected()
+                }
+                onClick={() =>
+                  handleDelete(Object.keys(rowSelection), deleteType)
+                }
+              >
                 <DeleteForeverIcon />
               </IconButton>
-          </Tooltip>
-            </>
+            </Tooltip>
+          </>
         )}
       </>
     ),
 
-    enableRowActions:true,
-    positionActionsColumn:'last',
-     renderRowActionMenuItems: ({ row }) => createAction(row,deleteType,handleDelete),
-     renderTopToolbarCustomActions:({ table }) => (
+    enableRowActions: true,
+    positionActionsColumn: "last",
+    renderRowActionMenuItems: ({ row }) =>
+      createAction(row, deleteType, handleDelete),
+    renderTopToolbarCustomActions: ({ table }) => (
       <Tooltip>
-        <ButtonLoading 
-        type="button"
-        text={<><SaveAltIcon/>Export</>}
-        loading={exportLoading}
-        onClick= {() => handleExport(table.getSelectedRowModel().rows) }
+        <ButtonLoading
+          type="button"
+          text={
+            <>
+              <SaveAltIcon fontSize="2" />
+              Export
+            </>
+          }
+          loading={exportLoading}
+          onClick={() => handleExport(table.getSelectedRowModel().rows)}
+          className="cursor-pointer"
         />
-          
       </Tooltip>
-     )
+    ),
   });
-  return (
-    <MaterialReactTable table={table}/>
-  )
+  return <MaterialReactTable table={table} />;
 };
 
 export default Datatable;

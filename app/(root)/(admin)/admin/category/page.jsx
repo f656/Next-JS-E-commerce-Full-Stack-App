@@ -1,12 +1,16 @@
+"use client";
 /* eslint-disable react-hooks/immutability */
 import BreadCrumb from "@/components/Application/Admin/BreadCrumb";
 import DatatableWrapper from "@/components/Application/Admin/DatatableWrapper";
+import DeleteAction from "@/components/Application/Admin/DeleteAction";
+import EditAction from "@/components/Application/Admin/EditAction";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DT_CATEGORY_COLUMN } from "@/lib/column";
-import { coloumnConfig } from "@/lib/helperFunction";
+import { columnConfig } from "@/lib/columnConfig";
 import {
   ADMIN_CATEGORY_ADD,
+  ADMIN_CATEGORY_EDIT,
   ADMIN_CATEGORY_SHOW,
   ADMIN_DASHBOARD,
   ADMIN_TRASH,
@@ -21,21 +25,30 @@ const breadcrumbData = [
 ];
 
 const ShowCategory = () => {
-
   const columns = useMemo(() => {
-    return coloumnConfig(DT_CATEGORY_COLUMN)
-  }, [])
+    return columnConfig(DT_CATEGORY_COLUMN);
+  }, []);
 
-   const action = useCallback((row,deleteType,handleDelete) =>{
-        let actionMenu = []
-        action.push()
-        return actionMenu;
-   },[])
+  const action = useCallback((row, deleteType, handleDelete) => {
+    let actionMenu = [];
+    actionMenu.push(
+      <EditAction key="edit" href={ADMIN_CATEGORY_EDIT(row.original._id)} />,
+    );
+    actionMenu.push(
+      <DeleteAction
+        key="delete"
+        handleDelete={handleDelete}
+        row={row}
+        deleteType={deleteType}
+      />,
+    );
+    return actionMenu;
+  }, []);
 
   return (
     <div>
       <BreadCrumb breadcrumbData={breadcrumbData} />
-      <Card className="py-0 rounded shadow-sm">
+      <Card className="py-0 rounded shadow-sm gap-0">
         <CardHeader className="pt-3 px-3 border-b [.border-b]">
           <div className="flex justify-between">
             <h4 className="text-xl font-semibold">Show Category</h4>
@@ -45,17 +58,17 @@ const ShowCategory = () => {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pb-5">
+        <CardContent className="px-0 pt-0">
           <DatatableWrapper
-           queryKey="category-data"
-           fetchUrl='/api/category'
-           initialPageSize={10}
-           columnConfig={columns}
-           exportEndpoint='/api/category/export'
-           deleteEndpoint='/api/category/delete'
-           deleteType='SD'
-           trashView={`${ADMIN_TRASH}?typeof=category`}
-           createAction={action}
+            queryKey="category-data"
+            fetchUrl="/api/category"
+            initialPageSize={10}
+            columnConfig={columns}
+            exportEndpoint="/api/category/export"
+            deleteEndpoint="/api/category/delete"
+            deleteType="SD"
+            trashView={`${ADMIN_TRASH}?typeof=category`}
+            createAction={action}
           />
         </CardContent>
       </Card>
