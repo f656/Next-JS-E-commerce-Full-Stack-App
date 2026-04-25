@@ -26,7 +26,7 @@ export async function POST(request) {
         name,slug
       })
       await newCategory.save();
-      return response(true,200,'category added successfully.')
+      return response(true,201,'category added successfully.')
   } catch (error) {
     return catchError(error);
   }
