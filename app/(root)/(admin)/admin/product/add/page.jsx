@@ -19,12 +19,12 @@ import useFetch from "@/hooks/useFetch";
 import { showToast } from "@/lib/showToast";
 import { zSchema } from "@/lib/zodSchema";
 import {
-  ADMIN_CATEGORY_SHOW,
   ADMIN_DASHBOARD,
   ADMIN_PRODUCT_SHOW,
 } from "@/routes/AdminPanelRoute";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";
@@ -83,15 +83,36 @@ const AddProduct = () => {
     }
   }, [form.watch("name")]);
 
+  //Discount percentage calculation
+  useEffect(() => {
+    const mrp = form.getValues("mrp") || 0;
+    const sellingPrice = form.getValues("sellingPrice") || 0;
+
+    if (mrp > 0 && sellingPrice > 0) {
+      const discountPercentage = ((mrp - sellingPrice) / mrp) * 100;
+      form.setValue("discountPercentage", Math.round(discountPercentage));
+    }
+  }, [form.watch("mrp"), form.watch("sellingPrice")]);
+
   const editor = (event, editor) => {
     const data = editor.getData();
     form.setValue("description", data);
   };
 
-  const onSubmit = async (value) => {
+  const onSubmit = async (values) => {
     setLoading(true);
     try {
-      const { data: response } = await axios.post("/api/product/create", value);
+      if (selectedMedia.length <= 0) {
+        return showToast("Please select at least one media.", "error");
+      }
+
+      const mediaIds = selectedMedia.map((media) => media._id);
+      values.media = mediaIds;
+
+      const { data: response } = await axios.post(
+        "/api/product/create",
+        values,
+      );
       if (!response.success) {
         throw new Error(response.message);
       }
@@ -112,7 +133,17 @@ const AddProduct = () => {
         </CardHeader>
         <CardContent className="pb-2">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form
+              onSubmit={form.handleSubmit(
+                (data) => {
+                  console.log("SUBMIT DATA:", data);
+                  onSubmit(data);
+                },
+                (errors) => {
+                  console.log("VALIDATION ERRORS:", errors);
+                },
+              )}
+            >
               <div className="grid md:grid-cols-2 gap-5">
                 <div className="">
                   <FormField
@@ -238,6 +269,7 @@ const AddProduct = () => {
                         <FormControl>
                           <Input
                             type="number"
+                            readOnly
                             placeholder="Enter Discount Percentage"
                             {...field}
                           />
@@ -266,10 +298,27 @@ const AddProduct = () => {
                   isMultiple={true}
                 />
 
+                {selectedMedia.length > 0 && (
+                  <div className="flex justify-center flex-wrap mb-3 gap-2">
+                    {selectedMedia.map((media) => (
+                      <div key={media._id} className="h-24 w-24 border">
+                        <Image
+                          src={media.url}
+                          height={100}
+                          width={100}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div
                   onClick={() => setOpen(true)}
                   className="bg-gray-50 dark:bg-card border w-50 mx-auto p-5 cursor-pointer"
-                ><span className="font-semibold">Select Media</span></div>
+                >
+                  <span className="font-semibold">Select Media</span>
+                </div>
               </div>
               <div className="mb-3 mt-5">
                 <ButtonLoading
