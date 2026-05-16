@@ -1,9 +1,8 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
-import CategoryModel from "@/models/Category.model";
-
+import MediaModel from "@/models/Media.model";
+import ProductModel from "@/models/Product.model";
 import { isValidObjectId } from "mongoose";
-
 export async function GET(request,{params}) {
     try {
         const auth = await isAuthenticated("admin")
@@ -24,12 +23,12 @@ export async function GET(request,{params}) {
 
         filter._id = id 
 
-        const getCategory = await CategoryModel.findOne(filter).lean();
-        if(!getCategory){
-            return response(false,404,'Category  not found.')
+        const getProduct = await ProductModel.findOne(filter).populate('media','_id secure_url').lean();
+        if(!getProduct){
+            return response(false,404,'Product  not found.')
         }
 
-        return response(true,200,'Category fetched successfully',getCategory)
+        return response(true,200,'Product fetched successfully',getProduct)
     } catch (error) {
         return catchError(error)
     }

@@ -1,7 +1,7 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
 import { zSchema } from "@/lib/zodSchema";
-import CategoryModel from "@/models/Category.model";
+import ProductModel from "@/models/Product.model";
 
 export async function PUT(request) {
   try {
@@ -14,9 +14,14 @@ export async function PUT(request) {
     const payload = await request.json();
 
     const schema = zSchema.pick({
-      _id: true,
       name: true,
       slug: true,
+      category: true,
+      mrp: true,
+      sellingPrice: true,
+      discountPercentage: true,
+      description: true,
+      media: true,
     });
     const validate = schema.safeParse(payload);
     if (!validate.success) {
@@ -28,16 +33,22 @@ export async function PUT(request) {
       );
     }
 
-    const { _id, name, slug } = validate.data;
-    const getCategory = await CategoryModel.findOne({ _id, deletedAt: null });
-    if (!getCategory) {
+    const validateData = validate.data;
+    const getProduct = await ProductModel.findOne({  deletedAt: null, _id: validateData._id });
+    if (!getProduct) {
       return response(false, 404, "Data not found.");
     }
-    getCategory.name = name;
-    getCategory.slug = slug;
-    await getCategory.save();
+    getProduct.name = validateData.name;
+    getProduct.slug = validateData.slug;
+    getProduct.category = validateData.category;
+    getProduct.mrp = validateData.mrp;
+    getProduct.sellingPrice = validateData.sellingPrice;
+    getProduct.discountPercentage = validateData.discountPercentage;
+    getProduct.description = encode(validateData.description);
+    getProduct.media = validateData.media;
+    await getProduct.save();
 
-    return response(true, 200, "category updated successfully.");
+    return response(true, 200, "Product updated successfully.");
   } catch (error) {
     return catchError(error);
   }

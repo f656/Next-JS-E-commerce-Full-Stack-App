@@ -68,7 +68,7 @@ export async function POST(request) {
     // remove otp after validation
     await getOtpData.deleteOne();
 
-    return response(true, 200, "Login successful", loggedInUserData);
+    return response(true, 200, "Login successfully", loggedInUserData);
   } catch (error) {
     return catchError(error);
   }

@@ -1,7 +1,6 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
-import CategoryModel from "@/models/Category.model";
-import mongoose from "mongoose";
+import ProductModel from "@/models/Product.model";
 
 //Update route
 export async function PUT(request) {
@@ -20,8 +19,8 @@ export async function PUT(request) {
       return response(false, 400, "Invalid or empty id list.");
     }
 
-    const category = await CategoryModel.find({ _id: { $in: ids } }).lean();
-    if (!category.length) {
+    const data = await ProductModel.find({ _id: { $in: ids } }).lean();
+    if (!data.length) {
       return response(false, 404, "Data not found.");
     }
 
@@ -34,12 +33,12 @@ export async function PUT(request) {
     }
 
     if (deleteType === "SD") {
-      await CategoryModel.updateMany(
+      await ProductModel.updateMany(
         { _id: { $in: ids } },
         { $set: { deletedAt: new Date().toISOString() } },
       );
     } else {
-      await CategoryModel.updateMany(
+      await ProductModel.updateMany(
         { _id: { $in: ids } },
         { $set: { deletedAt: null } },
       );
@@ -72,8 +71,8 @@ export async function DELETE(request) {
       return response(false, 400, "Invalid or empty id list.");
     }
 
-    const category = await CategoryModel.find({ _id: { $in: ids } }).lean();
-    if (!category.length) {
+    const data = await ProductModel.find({ _id: { $in: ids } }).lean();
+    if (!data.length) {
       return response(false, 404, "Data not found.");
     }
 
@@ -85,7 +84,7 @@ export async function DELETE(request) {
       );
     }
 
-    await CategoryModel.deleteMany({ _id: { $in: ids } });
+    await ProductModel.deleteMany({ _id: { $in: ids } });
 
     return response(true, 200, "Data deleted permanently");
   } catch (error) {

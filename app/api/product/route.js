@@ -34,12 +34,47 @@ export async function GET(request) {
         { name: { $regex: globalFilter, $options: "i" } },
         { slug: { $regex: globalFilter, $options: "i" } },
         { "categoryData.name": { $regex: globalFilter, $options: "i" } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$mrp" },
+              regex: globalFilter,
+              options: "i",
+            },
+          },
+        },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$sellingPrice" },
+              regex: globalFilter,
+              options: "i",
+            },
+          },
+        },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$discountPercentage" },
+              regex: globalFilter,
+              options: "i",
+            },
+          },
+        },
       ];
     }
 
     //Column Filteration
     filters.forEach((filter) => {
-      matchQuery[filter.id] = { $regex: filter.value, $options: "i" };
+      if (
+        filter.id === "mrp" ||
+        filter.id === "sellingPrice " ||
+        filter.id === "discountPercentage"
+      ) {
+        matchQuery[filter.id] = Number(filter.value);
+      } else {
+        matchQuery[filter.id] = { $regex: filter.value, $options: "i" };
+      }
     });
 
     //sorting

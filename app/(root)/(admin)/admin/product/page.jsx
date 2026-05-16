@@ -67,7 +67,7 @@ const ShowProduct = () => {
             exportEndpoint="/api/product/export"
             deleteEndpoint="/api/product/delete"
             deleteType="SD"
-            trashView={`${ADMIN_TRASH}?typeof=product`}
+            trashView={`${ADMIN_TRASH}?trashof=product`}
             createAction={action}
           />
         </CardContent>

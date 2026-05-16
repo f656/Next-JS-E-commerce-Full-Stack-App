@@ -5,12 +5,9 @@ import BreadCrumb from "@/components/Application/Admin/BreadCrumb";
 import DatatableWrapper from "@/components/Application/Admin/DatatableWrapper";
 import DeleteAction from "@/components/Application/Admin/DeleteAction";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { DT_CATEGORY_COLUMN } from "@/lib/column";
+import { DT_CATEGORY_COLUMN, DT_Product_COLUMN } from "@/lib/column";
 import { columnConfig } from "@/lib/columnConfig";
-import {
-  ADMIN_DASHBOARD,
-  ADMIN_TRASH,
-} from "@/routes/AdminPanelRoute";
+import { ADMIN_DASHBOARD, ADMIN_TRASH } from "@/routes/AdminPanelRoute";
 import { useSearchParams } from "next/navigation";
 import React, { useCallback, useMemo } from "react";
 
@@ -21,37 +18,41 @@ const breadcrumbData = [
 
 const TRASH_CONFIG = {
   category: {
-    title:'Category Trash',
-    columns:DT_CATEGORY_COLUMN,
-    fetchUrl:'/api/category',
-    exportUrl:'/api/category/export',
-    deleteUrl:'/api/category/delete'
-  }
-}
+    title: "Category Trash",
+    columns: DT_CATEGORY_COLUMN,
+    fetchUrl: "/api/category",
+    exportUrl: "/api/category/export",
+    deleteUrl: "/api/category/delete",
+  },
+  product: {
+    title: "Product Trash",
+    columns: DT_Product_COLUMN,
+    fetchUrl: "/api/product",
+    exportUrl: "/api/product/export",
+    deleteUrl: "/api/product/delete",
+  },
+};
 
 const Trash = () => {
+  const searchParams = useSearchParams();
+  const trashOf = searchParams.get("trashof") || "category";
 
-  const searchParams = useSearchParams()
-  const trashOf = searchParams.get('trashof')|| "category";
+  const config = TRASH_CONFIG[trashOf] || TRASH_CONFIG["category"];
 
-  const config = TRASH_CONFIG[trashOf] 
-
-
-
- const columns = useMemo(() => {
-  if (!config) return [];
-  return columnConfig(config.columns, false, false, true);
-}, [config]);
+  const columns = useMemo(() => {
+    if (!config) return [];
+    return columnConfig(config.columns, false, false, true);
+  }, [config]);
 
   const action = useCallback((row, deleteType, handleDelete) => {
-   
-     return  [<DeleteAction
+    return [
+      <DeleteAction
         key="delete"
         handleDelete={handleDelete}
         row={row}
         deleteType={deleteType}
-      />]
-  
+      />,
+    ];
   }, []);
 
   return (
@@ -61,7 +62,6 @@ const Trash = () => {
         <CardHeader className="pt-3 px-3 border-b [.border-b]">
           <div className="flex justify-between">
             <h4 className="text-xl font-semibold">{config.title}</h4>
-           
           </div>
         </CardHeader>
         <CardContent className="px-0 pt-0">
