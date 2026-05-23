@@ -2,6 +2,7 @@ import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
 import { zSchema } from "@/lib/zodSchema";
 import ProductModel from "@/models/Product.model";
+import { encode } from "entities";
 
 export async function PUT(request) {
   try {
@@ -14,6 +15,7 @@ export async function PUT(request) {
     const payload = await request.json();
 
     const schema = zSchema.pick({
+      _id:true,
       name: true,
       slug: true,
       category: true,
@@ -34,7 +36,10 @@ export async function PUT(request) {
     }
 
     const validateData = validate.data;
-    const getProduct = await ProductModel.findOne({  deletedAt: null, _id: validateData._id });
+    const getProduct = await ProductModel.findOne({
+      deletedAt: null,
+      _id: validateData._id,
+    });
     if (!getProduct) {
       return response(false, 404, "Data not found.");
     }

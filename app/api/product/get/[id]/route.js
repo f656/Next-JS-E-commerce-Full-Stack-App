@@ -1,6 +1,5 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
-import MediaModel from "@/models/Media.model";
 import ProductModel from "@/models/Product.model";
 import { isValidObjectId } from "mongoose";
 export async function GET(request,{params}) {
