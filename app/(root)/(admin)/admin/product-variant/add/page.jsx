@@ -28,7 +28,7 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import slugify from "slugify";
-import {sizes} from "@/lib/utils";
+import { sizes } from "@/lib/utils";
 const breadcrumbData = [
   { href: ADMIN_DASHBOARD, label: "Home" },
   { href: ADMIN_PRODUCT_VARIANT_SHOW, label: "Products Variants" },
@@ -48,34 +48,36 @@ const AddProduct = () => {
   useEffect(() => {
     if (getProduct && getProduct.success) {
       const data = getProduct.data;
-      const options = data.map((product) => ({ label: product.name, value: product._id }));
+      const options = data.map((product) => ({
+        label: product.name,
+        value: product._id,
+      }));
       setProductOption(options);
     }
   }, [getProduct]);
 
   const formSchema = zSchema.pick({
-    name: true,
-    slug: true,
     product: true,
+    sku: true,
+    color: true,
+    size: true,
     mrp: true,
     sellingPrice: true,
     discountPercentage: true,
-    description: true,
   });
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      slug: "",
-      category: "",
+      product: "",
+      sku: "",
+      color: "",
+      size: "",
       mrp: "",
       sellingPrice: "",
       discountPercentage: "",
-      description: "",
     },
   });
-
 
   //Discount percentage calculation
   useEffect(() => {
@@ -87,8 +89,7 @@ const AddProduct = () => {
       form.setValue("discountPercentage", Math.round(discountPercentage));
     }
   }, [form.watch("mrp"), form.watch("sellingPrice")]);
-
- 
+  
 
   const onSubmit = async (values) => {
     setLoading(true);
@@ -136,7 +137,7 @@ const AddProduct = () => {
               )}
             >
               <div className="grid md:grid-cols-2 gap-5">
-                 <div className="">
+                <div className="">
                   <FormField
                     control={form.control}
                     name="product"
@@ -213,7 +214,7 @@ const AddProduct = () => {
                           size <span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
-                           <Select
+                          <Select
                             options={sizes}
                             selected={field.value}
                             setSelected={field.onChange}
@@ -226,7 +227,7 @@ const AddProduct = () => {
                     )}
                   />
                 </div>
-               
+
                 <div className="">
                   <FormField
                     control={form.control}
@@ -271,7 +272,7 @@ const AddProduct = () => {
                     )}
                   />
                 </div>
-                <div className="">
+                <div className="mb-3">
                   <FormField
                     control={form.control}
                     name="discountPercentage"
@@ -295,7 +296,6 @@ const AddProduct = () => {
                     )}
                   />
                 </div>
-                
               </div>
 
               <div className="md:col-span-2 border border-dashed rounded p-5 text-center">

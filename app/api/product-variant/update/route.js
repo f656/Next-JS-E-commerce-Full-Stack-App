@@ -4,7 +4,7 @@ import { zSchema } from "@/lib/zodSchema";
 import ProductModel from "@/models/Product.model";
 import { encode } from "entities";
 
-export async function POST(request) {
+export async function PUT(request) {
   try {
     const auth = await isAuthenticated("admin");
     if (!auth.isAuth) {
@@ -15,6 +15,7 @@ export async function POST(request) {
     const payload = await request.json();
 
     const schema = zSchema.pick({
+      _id:true,
       name: true,
       slug: true,
       category: true,
@@ -34,19 +35,25 @@ export async function POST(request) {
       );
     }
 
-    const productData = validate.data;
-    const newProduct = new ProductModel({
-      name: productData.name,
-      slug: productData.slug,
-      category: productData.category,
-      mrp: productData.mrp,
-      sellingPrice: productData.sellingPrice,
-      discountPercentage: productData.discountPercentage,
-      description: encode(productData.description),
-      media: productData.media,
+    const validateData = validate.data;
+    const getProduct = await ProductModel.findOne({
+      deletedAt: null,
+      _id: validateData._id,
     });
-    await newProduct.save();
-    return response(true, 201, "Product added successfully.");
+    if (!getProduct) {
+      return response(false, 404, "Data not found.");
+    }
+    getProduct.name = validateData.name;
+    getProduct.slug = validateData.slug;
+    getProduct.category = validateData.category;
+    getProduct.mrp = validateData.mrp;
+    getProduct.sellingPrice = validateData.sellingPrice;
+    getProduct.discountPercentage = validateData.discountPercentage;
+    getProduct.description = encode(validateData.description);
+    getProduct.media = validateData.media;
+    await getProduct.save();
+
+    return response(true, 200, "Product updated successfully.");
   } catch (error) {
     return catchError(error);
   }

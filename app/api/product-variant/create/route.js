@@ -1,8 +1,7 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
 import { zSchema } from "@/lib/zodSchema";
-import ProductModel from "@/models/Product.model";
-import { encode } from "entities";
+import ProductVariantsModel from "@/models/ProductVariants.model";
 
 export async function POST(request) {
   try {
@@ -15,15 +14,16 @@ export async function POST(request) {
     const payload = await request.json();
 
     const schema = zSchema.pick({
-      name: true,
-      slug: true,
-      category: true,
+      product: true,
+      sku: true,
+      color: true,
+      size: true,
       mrp: true,
       sellingPrice: true,
       discountPercentage: true,
-      description: true,
-      media: true,
+      media:true,
     });
+
     const validate = schema.safeParse(payload);
     if (!validate.success) {
       return response(
@@ -34,19 +34,19 @@ export async function POST(request) {
       );
     }
 
-    const productData = validate.data;
-    const newProduct = new ProductModel({
-      name: productData.name,
-      slug: productData.slug,
-      category: productData.category,
-      mrp: productData.mrp,
-      sellingPrice: productData.sellingPrice,
-      discountPercentage: productData.discountPercentage,
-      description: encode(productData.description),
-      media: productData.media,
+    const variantData = validate.data;
+    const newProductVariant = new ProductVariantsModel({
+      product: variantData.product,
+      sku: variantData.sku,
+      color: variantData.color,
+      size: variantData.size,
+      mrp: variantData.mrp,
+      sellingPrice: variantData.sellingPrice,
+      discountPercentage: variantData.discountPercentage,
+      media: variantData.media,
     });
-    await newProduct.save();
-    return response(true, 201, "Product added successfully.");
+    await newProductVariant.save();
+    return response(true, 201, "Product variant added successfully.");
   } catch (error) {
     return catchError(error);
   }
