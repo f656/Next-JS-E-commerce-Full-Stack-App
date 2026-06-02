@@ -5,7 +5,7 @@ import BreadCrumb from "@/components/Application/Admin/BreadCrumb";
 import DatatableWrapper from "@/components/Application/Admin/DatatableWrapper";
 import DeleteAction from "@/components/Application/Admin/DeleteAction";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { DT_CATEGORY_COLUMN, DT_Product_COLUMN } from "@/lib/column";
+import { DT_CATEGORY_COLUMN, DT_Product_COLUMN, DT_Product_Variant_COLUMN } from "@/lib/column";
 import { columnConfig } from "@/lib/columnConfig";
 import { ADMIN_DASHBOARD, ADMIN_TRASH } from "@/routes/AdminPanelRoute";
 import { useSearchParams } from "next/navigation";
@@ -31,6 +31,13 @@ const TRASH_CONFIG = {
     exportUrl: "/api/product/export",
     deleteUrl: "/api/product/delete",
   },
+  "product-variant": {
+    title: "Product Variant Trash",
+    columns: DT_Product_Variant_COLUMN,
+    fetchUrl: "/api/product-variant",
+    exportUrl: "/api/product-variant/export",
+    deleteUrl: "/api/product-variant/delete",
+  },
 };
 
 const Trash = () => {
@@ -54,6 +61,7 @@ const Trash = () => {
       />,
     ];
   }, []);
+
 
   return (
     <div>

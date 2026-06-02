@@ -1,8 +1,7 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
 import { zSchema } from "@/lib/zodSchema";
-import ProductModel from "@/models/Product.model";
-import { encode } from "entities";
+import ProductVariantsModel from "@/models/ProductVariants.model";
 
 export async function PUT(request) {
   try {
@@ -16,15 +15,16 @@ export async function PUT(request) {
 
     const schema = zSchema.pick({
       _id:true,
-      name: true,
-      slug: true,
-      category: true,
+      product: true,
+      sku: true,
+      color: true,
+      size: true,
       mrp: true,
       sellingPrice: true,
       discountPercentage: true,
-      description: true,
-      media: true,
+      media:true,
     });
+
     const validate = schema.safeParse(payload);
     if (!validate.success) {
       return response(
@@ -36,24 +36,24 @@ export async function PUT(request) {
     }
 
     const validateData = validate.data;
-    const getProduct = await ProductModel.findOne({
+    const getProductVariant = await ProductVariantsModel.findOne({
       deletedAt: null,
       _id: validateData._id,
     });
-    if (!getProduct) {
+    if (!getProductVariant) {
       return response(false, 404, "Data not found.");
     }
-    getProduct.name = validateData.name;
-    getProduct.slug = validateData.slug;
-    getProduct.category = validateData.category;
-    getProduct.mrp = validateData.mrp;
-    getProduct.sellingPrice = validateData.sellingPrice;
-    getProduct.discountPercentage = validateData.discountPercentage;
-    getProduct.description = encode(validateData.description);
-    getProduct.media = validateData.media;
-    await getProduct.save();
+    getProductVariant.product = validateData.product;
+    getProductVariant.sku = validateData.sku;
+    getProductVariant.color = validateData.color;
+    getProductVariant.size = validateData.size;
+    getProductVariant.mrp = validateData.mrp;
+    getProductVariant.sellingPrice = validateData.sellingPrice;
+    getProductVariant.discountPercentage = validateData.discountPercentage;
+    getProductVariant.media = validateData.media;
+    await getProductVariant.save();
 
-    return response(true, 200, "Product updated successfully.");
+    return response(true, 200, "Product Variant updated successfully.");
   } catch (error) {
     return catchError(error);
   }

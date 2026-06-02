@@ -31,8 +31,9 @@ export async function GET(request) {
     //Global search
     if (globalFilter) {
       matchQuery["$or"] = [
-        { name: { $regex: globalFilter, $options: "i" } },
-        { slug: { $regex: globalFilter, $options: "i" } },
+        { color: { $regex: globalFilter, $options: "i" } },
+        { size: { $regex: globalFilter, $options: "i" } },
+        { sku: { $regex: globalFilter, $options: "i" } },
         { "productData.name": { $regex: globalFilter, $options: "i" } },
         {
           $expr: {
@@ -72,10 +73,12 @@ export async function GET(request) {
         filter.id === "discountPercentage"
       ) {
         matchQuery[filter.id] = Number(filter.value);
-      } else if(filter.id === "product"){
-        matchQuery["productData.name"] = { $regex: filter.value, $options: "i" };
-      } 
-      else {
+      } else if (filter.id === "product") {
+        matchQuery["productData.name"] = {
+          $regex: filter.value,
+          $options: "i",
+        };
+      } else {
         matchQuery[filter.id] = { $regex: filter.value, $options: "i" };
       }
     });
@@ -125,7 +128,8 @@ export async function GET(request) {
     ];
 
     //Execute Query
-    const getProductVariant = await ProductVariantsModel.aggregate(aggregatePipeline);
+    const getProductVariant =
+      await ProductVariantsModel.aggregate(aggregatePipeline);
 
     // get total RowCount
     const totalRowCount = await ProductVariantsModel.countDocuments(matchQuery);
