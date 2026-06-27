@@ -1,6 +1,6 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
-import ProductModel from "@/models/Product.model";
+import CouponModel from "@/models/Coupon.model";
 
 //Update route
 export async function PUT(request) {
@@ -19,7 +19,7 @@ export async function PUT(request) {
       return response(false, 400, "Invalid or empty id list.");
     }
 
-    const data = await ProductModel.find({ _id: { $in: ids } }).lean();
+    const data = await CouponModel.find({ _id: { $in: ids } }).lean();
     if (!data.length) {
       return response(false, 404, "Data not found.");
     }
@@ -33,12 +33,12 @@ export async function PUT(request) {
     }
 
     if (deleteType === "SD") {
-      await ProductModel.updateMany(
+      await CouponModel.updateMany(
         { _id: { $in: ids } },
         { $set: { deletedAt: new Date().toISOString() } },
       );
     } else {
-      await ProductModel.updateMany(
+      await CouponModel.updateMany(
         { _id: { $in: ids } },
         { $set: { deletedAt: null } },
       );
@@ -71,7 +71,7 @@ export async function DELETE(request) {
       return response(false, 400, "Invalid or empty id list.");
     }
 
-    const data = await ProductModel.find({ _id: { $in: ids } }).lean();
+    const data = await CouponModel.find({ _id: { $in: ids } }).lean();
     if (!data.length) {
       return response(false, 404, "Data not found.");
     }
@@ -84,7 +84,7 @@ export async function DELETE(request) {
       );
     }
 
-    await ProductModel.deleteMany({ _id: { $in: ids } });
+    await CouponModel.deleteMany({ _id: { $in: ids } });
 
     return response(true, 200, "Data deleted permanently");
   } catch (error) {

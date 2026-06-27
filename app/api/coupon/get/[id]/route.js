@@ -1,7 +1,8 @@
 import { connectDb } from "@/lib/databaseConnection";
 import { catchError, isAuthenticated, response } from "@/lib/helperFunction";
-import ProductModel from "@/models/Product.model";
 import { isValidObjectId } from "mongoose";
+import CouponModel from "@/models/Coupon.model";
+
 export async function GET(request,{params}) {
     try {
         const auth = await isAuthenticated("admin")
@@ -22,12 +23,12 @@ export async function GET(request,{params}) {
 
         filter._id = id 
 
-        const getProduct = await ProductModel.findOne(filter).populate('media','_id secure_url').lean();
-        if(!getProduct){
-            return response(false,404,'Product  not found.')
+        const getCoupon = await CouponModel.findOne(filter).lean();
+        if(!getCoupon){
+            return response(false,404,'Coupon  not found.')
         }
 
-        return response(true,200,'Product fetched successfully',getProduct)
+        return response(true,200,'Coupon fetched successfully',getCoupon)
     } catch (error) {
         return catchError(error)
     }

@@ -14,13 +14,7 @@ export async function PUT(request) {
     await connectDb();
     const payload = await request.json();
 
-    const schema = zSchema.pick({
-      _id: true,
-      code: true,
-      discountPercentage: true,
-      minShoppingAmount: true,
-      validity: true,
-    });
+    
     const validate = schema.safeParse(payload);
     if (!validate.success) {
       return response(
